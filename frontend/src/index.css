@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply font-sans text-ink-900 antialiased;
+}
+
+.mono {
+  @apply font-mono tracking-tight;
+}
+
+/* Focus visible clair pour l'accessibilité clavier */
+:focus-visible {
+  outline: 2px solid #C1802E;
+  outline-offset: 2px;
+}
