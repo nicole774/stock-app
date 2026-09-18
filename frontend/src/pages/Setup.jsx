@@ -1,26 +1,27 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext.jsx";
 import client from "../api/client";
-import { IconEye, IconEyeOff, IconPackage, IconWarehouse, IconTransfer } from "../components/icons.jsx";
+import { useAuth } from "../context/AuthContext.jsx";
+import { inputClass } from "../components/Field.jsx";
+import { IconWarehouse, IconTransfer, IconPackage } from "../components/icons.jsx";
 
-const inputClass =
-  "w-full rounded-lg border border-rule bg-white px-3 py-2.5 text-sm text-ink-900 placeholder:text-ink-300 " +
-  "transition-colors focus:outline-none focus:border-ink-500 focus:ring-2 focus:ring-ink-900/10";
-
-export default function Login() {
+export default function Setup() {
+  const [checking, setChecking] = useState(true);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    client.get("/auth/status").then(({ data }) => {
-      if (!data.hasUsers) navigate("/setup", { replace: true });
-    });
+    client
+      .get("/auth/status")
+      .then(({ data }) => {
+        if (data.hasUsers) navigate("/login", { replace: true });
+      })
+      .finally(() => setChecking(false));
   }, [navigate]);
 
   async function handleSubmit(e) {
@@ -28,18 +29,20 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
+      await client.post("/auth/register", { name, email, password });
       await login(email, password);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Connexion impossible.");
+      setError(err.response?.data?.message || "Impossible de créer le compte.");
     } finally {
       setLoading(false);
     }
   }
 
+  if (checking) return null;
+
   return (
     <div className="flex min-h-screen bg-ink-900">
-      {/* Panneau marque */}
       <div className="relative hidden flex-1 flex-col justify-between overflow-hidden p-12 lg:flex">
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.06]"
@@ -57,13 +60,13 @@ export default function Login() {
 
         <div className="relative max-w-md">
           <h2 className="text-3xl font-semibold leading-tight text-white">
-            Votre stock,
+            Bienvenue,
             <br />
-            <span className="text-amber">sous contrôle.</span>
+            <span className="text-amber">configurons votre espace.</span>
           </h2>
           <p className="mt-4 text-sm leading-relaxed text-white/50">
-            Suivi multi-entrepôts, traçabilité complète des mouvements, achats et ventes
-            avec mise à jour automatique des quantités.
+            Ce compte administrateur vous permettra ensuite de créer les accès de votre équipe
+            (gestionnaires, opérateurs) depuis la page Utilisateurs.
           </p>
           <ul className="mt-8 space-y-4">
             {[
@@ -86,7 +89,6 @@ export default function Login() {
         </p>
       </div>
 
-      {/* Formulaire */}
       <div className="flex w-full items-center justify-center bg-paper p-6 lg:w-[520px]">
         <div className="w-full max-w-sm">
           <div className="mb-8 lg:hidden">
@@ -95,8 +97,10 @@ export default function Login() {
             </span>
           </div>
 
-          <h1 className="text-xl font-semibold text-ink-900">Connexion</h1>
-          <p className="mt-1 text-sm text-ink-400">Accédez à votre espace de gestion.</p>
+          <h1 className="text-xl font-semibold text-ink-900">Créer le compte administrateur</h1>
+          <p className="mt-1 text-sm text-ink-400">
+            Première connexion : ce compte aura tous les droits sur l'application.
+          </p>
 
           <form onSubmit={handleSubmit} className="mt-6">
             {error && (
@@ -104,6 +108,11 @@ export default function Login() {
                 {error}
               </p>
             )}
+
+            <label className="mb-4 block">
+              <span className="mb-1.5 block text-xs font-medium text-ink-500">Nom complet</span>
+              <input required value={name} onChange={(e) => setName(e.target.value)} className={inputClass} />
+            </label>
 
             <label className="mb-4 block">
               <span className="mb-1.5 block text-xs font-medium text-ink-500">Email</span>
@@ -119,24 +128,15 @@ export default function Login() {
 
             <label className="mb-6 block">
               <span className="mb-1.5 block text-xs font-medium text-ink-500">Mot de passe</span>
-              <span className="relative block">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={`${inputClass} pr-10`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((v) => !v)}
-                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-ink-300 hover:text-ink-700"
-                >
-                  {showPassword ? <IconEyeOff size={16} /> : <IconEye size={16} />}
-                </button>
-              </span>
+              <input
+                type="password"
+                required
+                minLength={6}
+                autoComplete="new-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputClass}
+              />
             </label>
 
             <button
@@ -144,7 +144,7 @@ export default function Login() {
               disabled={loading}
               className="w-full rounded-lg bg-ink-900 py-2.5 text-sm font-medium text-white transition-colors hover:bg-ink-700 disabled:opacity-50"
             >
-              {loading ? "Connexion..." : "Se connecter"}
+              {loading ? "Création..." : "Créer mon compte et démarrer"}
             </button>
           </form>
         </div>

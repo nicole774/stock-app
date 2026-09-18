@@ -2,11 +2,21 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const prisma = require("../lib/prisma");
 
+// Inscription publique : réservée à la création du tout premier compte
+// (l'administrateur). Une fois qu'un compte existe, seul un administrateur
+// connecté peut créer d'autres comptes (voir user.controller.js).
 async function register(req, res, next) {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password } = req.body;
     if (!name || !email || !password) {
       return res.status(400).json({ message: "Nom, email et mot de passe requis." });
+    }
+
+    const userCount = await prisma.user.count();
+    if (userCount > 0) {
+      return res.status(403).json({
+        message: "Un administrateur existe déjà. Demandez-lui de créer votre compte depuis la page Utilisateurs.",
+      });
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -16,11 +26,20 @@ async function register(req, res, next) {
 
     const hashed = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { name, email, password: hashed, role: role || "EMPLOYEE" },
+      data: { name, email, password: hashed, role: "ADMIN" },
       select: { id: true, name: true, email: true, role: true, createdAt: true },
     });
 
     res.status(201).json(user);
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function status(req, res, next) {
+  try {
+    const userCount = await prisma.user.count();
+    res.json({ hasUsers: userCount > 0 });
   } catch (err) {
     next(err);
   }
@@ -66,4 +85,4 @@ async function me(req, res, next) {
   }
 }
 
-module.exports = { register, login, me };
+module.exports = { register, login, me, status };
