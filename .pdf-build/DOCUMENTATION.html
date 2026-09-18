@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>StockFlow — Comprendre et maintenir le projet</title>
+<style>
+  :root {
+    --ink: #1e293b;
+    --muted: #64748b;
+    --accent: #1d4ed8;
+    --accent-soft: #eff6ff;
+    --line: #e2e8f0;
+    --code-bg: #f8fafc;
+    --warn-bg: #fffbeb;
+    --warn-line: #d97706;
+  }
+  @page { size: A4; margin: 0; }
+  html, body { margin: 0; padding: 0; background: #ffffff; }
+  body {
+    font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    color: var(--ink);
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+  h2 { break-before: page; break-after: avoid; font-size: 21px; color: var(--accent); margin: 0 0 14px; padding-bottom: 8px; border-bottom: 2px solid var(--line); }
+  h3 { break-after: avoid; font-size: 15.5px; margin: 20px 0 8px; color: var(--ink); }
+  p { margin: 8px 0; }
+  ul, ol { margin: 8px 0; padding-left: 22px; }
+  li { margin: 4px 0; }
+  strong { color: #0f172a; }
+  code {
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 12px;
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 1px 4px;
+    white-space: nowrap;
+  }
+  pre {
+    break-inside: avoid;
+    background: var(--code-bg);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin: 10px 0;
+    overflow: hidden;
+  }
+  pre code { border: none; background: none; padding: 0; white-space: pre; font-size: 11.5px; line-height: 1.5; }
+  pre.tree code { font-size: 10.5px; line-height: 1.42; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+    font-size: 12.5px;
+  }
+  thead { display: table-header-group; }
+  th { background: var(--accent-soft); color: #0f172a; text-align: left; padding: 6px 9px; border: 1px solid var(--line); }
+  td { padding: 5px 9px; border: 1px solid var(--line); vertical-align: top; }
+  tr { break-inside: avoid; }
+  blockquote {
+    break-inside: avoid;
+    margin: 12px 0;
+    padding: 9px 14px;
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 4px 4px 0;
+    color: #1e3a8a;
+  }
+  blockquote p { margin: 3px 0; }
+  .warning {
+    break-inside: avoid;
+    margin: 12px 0;
+    padding: 9px 14px;
+    background: var(--warn-bg);
+    border-left: 3px solid var(--warn-line);
+    border-radius: 0 4px 4px 0;
+  }
+  .warning p { margin: 3px 0; color: #78350f; }
+  /* ----- En-tête de couverture ----- */
+  .cover { padding: 26px 0 8px; border-bottom: 3px solid var(--accent); margin-bottom: 20px; }
+  .cover .kicker { font-size: 11px; letter-spacing: 3px; color: var(--accent); font-weight: 600; text-transform: uppercase; }
+  .cover h1 { font-size: 30px; margin: 10px 0 6px; color: #0f172a; line-height: 1.2; }
+  .cover .summary { color: var(--muted); font-size: 14px; max-width: 90%; }
+  .cover .meta { margin-top: 12px; font-size: 12px; color: var(--muted); }
+  /* ----- Sommaire ----- */
+  .toc { break-inside: avoid; }
+  .toc h2 { break-before: avoid; border: none; margin-bottom: 6px; }
+  .toc ol { columns: 2; column-gap: 34px; padding-left: 20px; margin: 8px 0; }
+  .toc a { color: var(--ink); text-decoration: none; }
+  .toc a::after { content: ""; }
+  a { color: var(--accent); }
+  .footnote { margin-top: 22px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════ Couverture + sommaire ═══════════ -->
+<div class="cover">
+  <div class="kicker">StockFlow · Guide de maintenance</div>
+  <h1>Comprendre et maintenir StockFlow</h1>
+  <p class="summary">Ce document explique où se trouve chaque chose, comment le projet fonctionne et comment
+  le modifier ou le réparer, même sans aide. Il accompagne le fichier <code>DOCUMENTATION.md</code> du dépôt.</p>
+  <div class="meta">Application de gestion de stock — React (Vite) + Tailwind · Node.js / Express + Prisma · PostgreSQL — 14 septembre 2026</div>
+</div>
+
+<div class="toc">
+  <h2>Sommaire</h2>
+  <ol>
+    <li><a href="#s1">Le projet en deux mots</a></li>
+    <li><a href="#s2">Vue d'ensemble : comment les pièces s'emboîtent</a></li>
+    <li><a href="#s3">Où se trouve quoi (arborescence commentée)</a></li>
+    <li><a href="#s4">La base de données</a></li>
+    <li><a href="#s5">Le backend (dossier <code>backend/</code>)</a></li>
+    <li><a href="#s6">Le frontend (dossier <code>frontend/</code>)</a></li>
+    <li><a href="#s7">Démarrer le projet au quotidien</a></li>
+    <li><a href="#s8">Recettes : modifications courantes</a></li>
+    <li><a href="#s9">Dépannage : problème → solution</a></li>
+    <li><a href="#s10">Git : sauvegarder et mettre à jour le projet</a></li>
+    <li><a href="#s11">Un jour, mettre en ligne pour de vrai (production)</a></li>
+    <li><a href="#s12">Lexique des mots techniques</a></li>
+  </ol>
+</div>
+
+<!-- ═══════════ 1 ═══════════ -->
+<h2 id="s1">1. Le projet en deux mots</h2>
+<p><strong>StockFlow</strong> est une application web de <strong>gestion de stock multi-entrepôts</strong> :
+produits, fournisseurs, clients, entrepôts, mouvements de stock (entrées, sorties, transferts),
+commandes d'achat et de vente, tableau de bord avec graphiques. On s'y connecte avec un email
+et un mot de passe.</p>
+<p>Elle est composée de <strong>deux applications</strong> qui tournent en même temps :</p>
+<table>
+  <thead><tr><th>Application</th><th>Dossier</th><th>Technologie</th><th>Adresse locale</th></tr></thead>
+  <tbody>
+    <tr><td><strong>Le backend</strong> (l'API)</td><td><code>backend/</code></td><td>Node.js + Express + Prisma</td><td>http://localhost:4000</td></tr>
+    <tr><td><strong>Le frontend</strong> (l'écran)</td><td><code>frontend/</code></td><td>React (Vite) + Tailwind CSS</td><td>http://localhost:5173</td></tr>
+  </tbody>
+</table>
+<p>La <strong>base de données</strong> est <strong>PostgreSQL</strong>, installée sur ton ordinateur.
+Elle stocke tout : produits, quantités, utilisateurs, commandes…</p>
+<blockquote><p>💡 <strong>Règle d'or</strong> : le frontend <strong>ne parle jamais directement à la base de
+données</strong>. Il envoie des requêtes HTTP au backend, et seul le backend lit ou écrit dans la base.
+C'est ce qui garantit la sécurité et la cohérence des stocks.</p></blockquote>
+
+<!-- ═══════════ 2 ═══════════ -->
+<h2 id="s2">2. Vue d'ensemble : comment les pièces s'emboîtent</h2>
+<p>Quand tu cliques sur « Enregistrer » dans une page du site, voici le voyage :</p>
+<pre><code>┌──────────────┐   requête HTTP    ┌───────────────────────────┐
+│  TON NAVI-   │ ────────────────► │  BACKEND (Express)        │
+│  GATEUR      │   ex: POST        │                           │
+│  (frontend)  │   /api/products   │  1. Route (quelle URL ?)  │
+│  React       │                   │  2. Middleware auth       │
+└──────────────┘                   │     (token valide ?       │
+        ▲                          │      rôle autorisé ?)     │
+        │ réponse JSON             │  3. Contrôleur (que faire)│
+        └────────────────────────  │  4. Prisma (traducteur)   │
+                                   └────────────┬──────────────┘
+                                                │ requête SQL
+                                                ▼
+                                   ┌───────────────────────────┐
+                                   │  BASE PostgreSQL          │
+                                   │  (localhost:5432,         │
+                                   │   base "stock_db")        │
+                                   └───────────────────────────┘</code></pre>
+<ul>
+  <li>La réponse est du <strong>JSON</strong> (du texte structuré que React sait afficher).</li>
+  <li>L'authentification utilise un <strong>JWT</strong> : à la connexion, le backend délivre un
+  « badge » (token) que le frontend présente à chaque requête suivante.</li>
+</ul>
+
+<!-- ═══════════ 3 ═══════════ -->
+<h2 id="s3">3. Où se trouve quoi (arborescence commentée)</h2>
+<pre class="tree"><code>stock-app/
+│
+├── .gitignore              ← liste des fichiers que git n'envoie JAMAIS sur GitHub
+│                             (.env, node_modules, dist…)
+├── README.md               ← présentation courte du projet
+├── DOCUMENTATION.md        ← la même aide que ce PDF, en version texte
+│
+├── backend/                ← ===== L'API (serveur) =====
+│   ├── .env                ← ⚠ SECRETS (mot de passe BDD, clé JWT). JAMAIS sur GitHub.
+│   ├── .env.example        ← copie sans secrets, modèle à suivre
+│   ├── package.json        ← liste des dépendances + scripts npm du backend
+│   ├── package-lock.json   ← versions exactes installées (à versionner)
+│   ├── prisma/
+│   │   ├── schema.prisma   ← ⭐ LA STRUCTURE DE LA BASE (toutes les tables)
+│   │   ├── migrations/     ← historique des modifications de la base (versionné)
+│   │   │   └── 20260914002548_init/
+│   │   └── seed.js         ← crée les comptes + données de démonstration
+│   └── src/
+│       ├── index.js        ← ⭐ point d'entrée : démarre Express, branche les routes
+│       ├── lib/prisma.js   ← connexion unique à la base (partagée partout)
+│       ├── middleware/
+│       │   ├── auth.js     ← vérifie le token JWT et les rôles (ADMIN/MANAGER/…)
+│       │   └── errorHandler.js ← attrape les erreurs → réponse JSON propre
+│       ├── routes/         ← 1 fichier par domaine : "si l'URL est /api/xxx,
+│       │                      appelle tel contrôleur"
+│       └── controllers/    ← ⭐ LA LOGIQUE MÉTIER (le "que faire" de chaque route)
+│           ├── auth.controller.js         (login, profil)
+│           ├── genericCrud.js             (fabrique de CRUD réutilisable)
+│           ├── category.controller.js     (3 lignes : utilise genericCrud)
+│           ├── supplier / customer / warehouse.controller.js (idem)
+│           ├── product.controller.js      (logique spécifique produits)
+│           ├── stock.controller.js        (mouvements, transactions)
+│           ├── purchaseOrder.controller.js(réception achat → stock +)
+│           ├── salesOrder.controller.js   (vente → stock −, annulation → stock +)
+│           └── dashboard.controller.js    (statistiques + graphiques)</code></pre>
+<pre class="tree"><code>└── frontend/               ← ===== L'APPLICATION VISIBLE =====
+    ├── .env                ← adresse de l'API (VITE_API_URL)
+    ├── .env.example        ← modèle
+    ├── package.json        ← dépendances + scripts npm du frontend
+    ├── vite.config.js      ← configuration de l'outil de build Vite
+    ├── tailwind.config.js  ← couleurs et styles du design system
+    ├── postcss.config.js   ← pipeline CSS (Tailwind)
+    ├── index.html          ← page HTML unique (React s'y installe)
+    ├── dist/               ← résultat du "npm run build" (généré, ignoré par git)
+    └── src/
+        ├── main.jsx        ← point d'entrée React
+        ├── App.jsx         ← ⭐ LES ROUTES (quelle page pour quelle URL)
+        ├── index.css       ← styles globaux + classes utilitaires Tailwind
+        ├── api/
+        │   └── client.js   ⭐ axios configuré : ajoute le token, gère la déconnexion
+        ├── context/
+        │   └── AuthContext.jsx ← qui est connecté ? login/logout (partagé partout)
+        ├── utils/
+        │   └── format.js   ← formatage argent/dates, libellés des statuts et rôles
+        ├── components/     ← briques réutilisables de l'interface
+        │   ├── Layout.jsx      (menu latéral + barre du haut)
+        │   ├── DataTable.jsx   (tableau avec tri)
+        │   ├── Modal.jsx, ConfirmDialog.jsx, Toast.jsx, Badge.jsx, Button.jsx,
+        │   ├── Field.jsx, PageHeader.jsx, StatCard.jsx, icons.jsx
+        └── pages/          ⭐ 1 fichier = 1 écran
+            ├── Login.jsx, Dashboard.jsx, Products.jsx, Categories.jsx,
+            ├── Suppliers.jsx, Customers.jsx, Warehouses.jsx,
+            └── StockMovements.jsx, PurchaseOrders.jsx, SalesOrders.jsx</code></pre>
+
+<!-- ═══════════ 4 ═══════════ -->
+<h2 id="s4">4. La base de données</h2>
+<h3>Où sont les données ?</h3>
+<p>Dans <strong>PostgreSQL</strong>, installé localement. Les identifiants sont dans
+<code>backend/.env</code> (ligne <code>DATABASE_URL</code>) :</p>
+<pre><code>postgresql://postgres:postgres@localhost:5432/stock_db?schema=public
+                └─user─┘└─pass─┘          └─base─┘</code></pre>
+<h3>Prisma : le traducteur entre JavaScript et SQL</h3>
+<p>On n'écrit pas de SQL à la main. <strong>Prisma</strong> lit le fichier
+<code>backend/prisma/schema.prisma</code> (la description des tables) et génère un client
+JavaScript. Tu as un modèle (une « table ») par concept :</p>
+<table>
+  <thead><tr><th>Modèle (schema.prisma)</th><th>Table SQL</th><th>Rôle</th></tr></thead>
+  <tbody>
+    <tr><td><code>User</code></td><td><code>users</code></td><td>comptes, rôle ADMIN / MANAGER / EMPLOYEE</td></tr>
+    <tr><td><code>Warehouse</code></td><td><code>warehouses</code></td><td>entrepôts et boutiques</td></tr>
+    <tr><td><code>Category</code> / <code>Supplier</code> / <code>Customer</code></td><td><code>categories</code> / <code>suppliers</code> / <code>customers</code></td><td>référentiels</td></tr>
+    <tr><td><code>Product</code></td><td><code>products</code></td><td>catalogue (SKU unique, prix achat/vente, seuil d'alerte)</td></tr>
+    <tr><td><code>StockItem</code></td><td><code>stock_items</code></td><td><strong>quantité</strong> d'un produit dans un entrepôt</td></tr>
+    <tr><td><code>StockMovement</code></td><td><code>stock_movements</code></td><td>historique IN / OUT / TRANSFER / ADJUSTMENT</td></tr>
+    <tr><td><code>PurchaseOrder</code> + <code>PurchaseOrderItem</code></td><td><code>purchase_orders</code>…</td><td>commandes fournisseurs</td></tr>
+    <tr><td><code>SalesOrder</code> + <code>SalesOrderItem</code></td><td><code>sales_orders</code>…</td><td>commandes clients</td></tr>
+  </tbody>
+</table>
+<blockquote><p>💡 Les quantités ne sont jamais devinées : <code>StockItem</code> fait foi, et chaque
+changement laisse une trace dans <code>StockMovement</code>.</p></blockquote>
+<h3>Les commandes Prisma (à lancer dans <code>backend/</code>)</h3>
+<table>
+  <thead><tr><th>Commande</th><th>À quoi ça sert</th></tr></thead>
+  <tbody>
+    <tr><td><code>npx prisma migrate dev</code></td><td>applique les changements du <code>schema.prisma</code> à la base (crée une « migration »)</td></tr>
+    <tr><td><code>npm run seed</code></td><td>crée/re-crée les données de démonstration (idempotent : pas de doublons)</td></tr>
+    <tr><td><code>npx prisma studio</code></td><td><strong>ouvre un explorateur visuel</strong> de la base sur http://localhost:5555 — très pratique pour vérifier des données</td></tr>
+    <tr><td><code>npx prisma generate</code></td><td>régénère le client après un changement de schéma (fait automatiquement par <code>migrate dev</code>)</td></tr>
+  </tbody>
+</table>
+<div class="warning"><p>⚠️ <strong>Ne supprime jamais le dossier <code>prisma/migrations/</code></strong> :
+c'est la mémoire des modifications de la base. Il doit être versionné sur GitHub.</p></div>
+
+<!-- ═══════════ 5 ═══════════ -->
+<h2 id="s5">5. Le backend (dossier <code>backend/</code>)</h2>
+<h3>Le trajet d'une requête</h3>
+<p>Exemple : <code>GET /api/products</code> (liste des produits).</p>
+<ol>
+  <li><strong><code>src/index.js</code></strong> — Express reçoit la requête, voit le préfixe
+  <code>/api/products</code> et délègue à <code>routes/product.routes.js</code>.</li>
+  <li><strong><code>src/middleware/auth.js</code></strong> — <code>authenticate</code> vérifie le header
+  <code>Authorization: Bearer &lt;token&gt;</code> et décode le token JWT → <code>req.user</code>
+  (<code>{ id, role, email }</code>). Certaines routes ajoutent <code>authorize("ADMIN", "MANAGER")</code>.</li>
+  <li><strong><code>src/routes/product.routes.js</code></strong> — pour <code>GET /</code> appelle <code>ctrl.list</code>.</li>
+  <li><strong><code>src/controllers/product.controller.js</code></strong> — exécute les requêtes Prisma,
+  calcule le stock total par produit, renvoie le JSON.</li>
+  <li><strong><code>src/middleware/errorHandler.js</code></strong> — si une étape a planté, renvoie une
+  erreur JSON lisible au lieu de faire crasher le serveur.</li>
+</ol>
+<h3>Le CRUD générique : le truc malin du projet</h3>
+<p><code>controllers/genericCrud.js</code> fabrique les 5 opérations standards
+(liste / détail / création / modification / suppression) pour <strong>n'importe quel modèle
+simple</strong>. C'est pourquoi <code>category.controller.js</code> ne fait que 6 lignes :</p>
+<pre><code>const createCrudController = require("./genericCrud");
+module.exports = createCrudController("category", { searchFields: ["name"] });</code></pre>
+<p>Les contrôleurs <strong>spécifiques</strong> (product, stock, purchaseOrder, salesOrder,
+dashboard, auth) contiennent de la vraie logique métier.</p>
+<h3>La logique du stock (le cœur du métier)</h3>
+<p>Tout ce qui touche aux quantités est fait dans une <strong>transaction Prisma</strong>
+(<code>prisma.$transaction</code>) : soit toutes les écritures réussissent, soit aucune —
+impossible d'avoir un stock à moitié mis à jour.</p>
+<ul>
+  <li><strong>Vente créée</strong> → vérifie le stock disponible dans l'entrepôt, sinon erreur
+  « stock insuffisant » → décrémente <code>StockItem</code> → crée un mouvement <code>OUT</code>.</li>
+  <li><strong>Vente CONFIRMED annulée</strong> → recrée la quantité → mouvement de contrepassation.</li>
+  <li><strong>Achat réceptionné</strong> → incrémente <code>StockItem</code> de l'entrepôt → mouvement <code>IN</code>.</li>
+  <li><strong>Mouvement manuel</strong> → <code>IN</code> (entrée), <code>OUT</code> (sortie), <code>TRANSFER</code>
+  (d'un entrepôt vers un autre), <code>ADJUSTMENT</code> (quantité finale signée <code>+</code>/<code>−</code>).</li>
+</ul>
+<h3>Les variables d'environnement (<code>backend/.env</code>)</h3>
+<table>
+  <thead><tr><th>Variable</th><th>Rôle</th><th>Peut changer ?</th></tr></thead>
+  <tbody>
+    <tr><td><code>DATABASE_URL</code></td><td>connexion PostgreSQL</td><td>seulement si tu changes le mot de passe PostgreSQL</td></tr>
+    <tr><td><code>PORT</code></td><td>port de l'API (4000)</td><td>si 4000 est déjà pris</td></tr>
+    <tr><td><code>JWT_SECRET</code></td><td>clé qui signe les tokens</td><td>⚠ à changer pour la production, jamais publié</td></tr>
+    <tr><td><code>JWT_EXPIRES_IN</code></td><td>durée de validité du token (7d)</td><td>oui</td></tr>
+    <tr><td><code>CLIENT_URL</code></td><td>adresse du frontend autorisée (CORS)</td><td>si le frontend change d'adresse</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════ 6 ═══════════ -->
+<h2 id="s6">6. Le frontend (dossier <code>frontend/</code>)</h2>
+<h3>L'ossature</h3>
+<ul>
+  <li><code>main.jsx</code> → monte React dans <code>index.html</code>, active le routeur et <code>AuthProvider</code>.</li>
+  <li><code>App.jsx</code> → <strong>la carte des URLs</strong>. <code>/login</code> est publique ; toutes les autres
+  pages sont enveloppées dans <code>ProtectedRoute</code> (renvoie vers <code>/login</code> si non connectée)
+  et affichées dans <code>Layout</code> (menu latéral).</li>
+  <li><code>context/AuthContext.jsx</code> → stocke l'utilisateur connecté. À la connexion, le token et
+  l'utilisateur sont gardés dans le <strong>localStorage</strong> du navigateur (clés <code>stockflow_token</code>
+  et <code>stockflow_user</code>), donc la session survit au rechargement de la page.</li>
+  <li><code>api/client.js</code> → axios pré-configuré : ajoute automatiquement le token à chaque requête ;
+  si l'API répond 401 (session expirée), nettoie le stockage et renvoie à <code>/login</code>.
+  L'adresse de l'API vient de <code>VITE_API_URL</code> (frontend/.env), avec
+  <code>http://localhost:4000/api</code> par défaut.</li>
+</ul>
+<h3>Structure d'une page type (ex : <code>pages/Products.jsx</code>)</h3>
+<p>Toutes les pages de gestion suivent le même schéma — si tu sais lire une, tu sais les lire toutes :</p>
+<ol>
+  <li>des <code>useState</code> pour les données, le chargement, la modale ouverte, le formulaire ;</li>
+  <li>un <code>useEffect</code> qui charge la liste via <code>client.get("/products")</code> au montage ;</li>
+  <li>un formulaire dans une <code>Modal</code> qui fait <code>client.post</code> / <code>client.put</code> ;</li>
+  <li>un bouton supprimer avec <code>ConfirmDialog</code> puis <code>client.delete</code> ;</li>
+  <li>un rendu avec <code>PageHeader</code> + <code>DataTable</code> + <code>Toast</code> pour les confirmations.</li>
+</ol>
+<h3>Les composants réutilisables (<code>components/</code>)</h3>
+<p>Ne réinvente rien : <code>Button</code>, <code>Field</code> (champ de formulaire), <code>Modal</code>,
+<code>ConfirmDialog</code>, <code>DataTable</code>, <code>Badge</code> (étiquettes colorées), <code>StatCard</code>
+(carte de statistique), <code>Toast</code> (notification), <code>PageHeader</code>, <code>icons.jsx</code>
+(icônes SVG), <code>Layout</code> (squelette de l'app avec le menu).</p>
+<h3>Le formatage (<code>utils/format.js</code>)</h3>
+<p>Argent, dates, libellés des statuts (« PENDING » → « En attente ») et rôles.</p>
+<blockquote><p>💡 <strong>La monnaie affichée</strong> : c'est la constante <code>CURRENCY_SUFFIX = "F"</code>
+en haut de <code>frontend/src/utils/format.js</code>. Change-la en <code>" FCFA"</code>, <code>" €"</code>…
+pour adapter l'affichage partout.</p></blockquote>
+
+<!-- ═══════════ 7 ═══════════ -->
+<h2 id="s7">7. Démarrer le projet au quotidien</h2>
+<p>Conditions : PostgreSQL doit être démarré (le service Windows « postgresql »).</p>
+<p><strong>Terminal 1 — l'API :</strong></p>
+<pre><code>cd C:\Users\Hortencia\Documents\GitHub\stock-app\backend
+npm run dev
+# → "API démarrée sur http://localhost:4000"</code></pre>
+<p><strong>Terminal 2 — l'interface :</strong></p>
+<pre><code>cd C:\Users\Hortencia\Documents\GitHub\stock-app\frontend
+npm run dev
+# → ouvre http://localhost:5173 dans le navigateur</code></pre>
+<p><strong>Comptes de démonstration</strong> (créés par <code>npm run seed</code>) :</p>
+<table>
+  <thead><tr><th>Rôle</th><th>Email</th><th>Mot de passe</th></tr></thead>
+  <tbody>
+    <tr><td>ADMIN</td><td><code>admin@stock.app</code></td><td><code>admin123</code></td></tr>
+    <tr><td>MANAGER</td><td><code>manager@stock.app</code></td><td><code>staff123</code></td></tr>
+    <tr><td>EMPLOYEE</td><td><code>employee@stock.app</code></td><td><code>staff123</code></td></tr>
+  </tbody>
+</table>
+<p>Vérifications rapides : http://localhost:4000/api/health doit répondre
+<code>{"status":"ok"}</code>. Pour arrêter un serveur : <code>Ctrl + C</code> dans son terminal.</p>
+
+<!-- ═══════════ 8 ═══════════ -->
+<h2 id="s8">8. Recettes : modifications courantes</h2>
+
+<h3>Recette A — Ajouter un champ (ex : « garantie en mois » sur les produits)</h3>
+<ol>
+  <li>Ouvre <code>backend/prisma/schema.prisma</code>, dans le modèle <code>Product</code> ajoute :</li>
+</ol>
+<pre><code>warrantyMonths Int @default(0)</code></pre>
+<ol start="2">
+  <li>Dans <code>backend/</code> : <code>npx prisma migrate dev --name ajout_garantie</code>
+  (la colonne est créée dans la base, le client Prisma est régénéré).</li>
+  <li>Frontend : dans <code>frontend/src/pages/Products.jsx</code>, ajoute le champ dans le
+  formulaire (<code>Field</code>) et, si tu veux l'afficher, une colonne dans le tableau.
+  C'est tout : l'API enregistrera le champ car le contrôleur transmet <code>req.body</code>.</li>
+</ol>
+<blockquote><p>🔑 Le principe est <strong>toujours le même</strong> : schéma → <code>migrate dev</code> →
+ajuster la page frontend.</p></blockquote>
+
+<h3>Recette B — Ajouter une entité complète (ex : « Sites de production »)</h3>
+<p><strong>Backend</strong> (copie le modèle des catégories, le plus simple) :</p>
+<ol>
+  <li><code>schema.prisma</code> : ajoute le modèle <code>ProductionSite</code> (inspire-toi de <code>Category</code>).</li>
+  <li><code>npx prisma migrate dev --name production_sites</code></li>
+  <li>Crée <code>src/controllers/productionSite.controller.js</code> :</li>
+</ol>
+<pre><code>const createCrudController = require("./genericCrud");
+module.exports = createCrudController("productionSite", { searchFields: ["name"] });</code></pre>
+<ol start="4">
+  <li>Crée <code>src/routes/productionSite.routes.js</code> (copie <code>category.routes.js</code>,
+  remplace le nom) et branche-le dans <code>src/index.js</code> :</li>
+</ol>
+<pre><code>const productionSiteRoutes = require("./routes/productionSite.routes");
+app.use("/api/production-sites", productionSiteRoutes);</code></pre>
+<p><strong>Frontend</strong> (copie <code>pages/Categories.jsx</code>, le plus simple) :</p>
+<ol start="5">
+  <li>Crée <code>src/pages/ProductionSites.jsx</code> en l'adaptant (l'URL d'API : <code>/production-sites</code>).</li>
+  <li>Déclare la route dans <code>src/App.jsx</code> et le lien dans le menu dans
+  <code>components/Layout.jsx</code>.</li>
+</ol>
+
+<h3>Recette C — Créer un utilisateur / changer un mot de passe</h3>
+<p>Le plus simple : <code>npx prisma studio</code> (dans <code>backend/</code>) → table <code>users</code>.
+Le mot de passe doit être <strong>haché</strong> : pour le recalculer, colle ceci dans un terminal
+(toujours dans <code>backend/</code>) et remplace la colonne <code>password</code> par le résultat :</p>
+<pre><code>node -e "const b=require('bcryptjs');console.log(b.hashSync('NouveauMotDePasse',10))"</code></pre>
+
+<h3>Recette D — Repartir d'une base propre</h3>
+<pre><code>cd backend
+npx prisma migrate reset   # efface TOUT et rejoue migrations + seed</code></pre>
+<div class="warning"><p>⚠️ Efface les vraies données — à ne faire qu'en développement.</p></div>
+
+<h3>Recette E — Vérifier ou corriger des quantités</h3>
+<p>Ouvre <code>npx prisma studio</code>, regarde <code>stock_items</code> (les quantités) et
+<code>stock_movements</code> (l'historique). Pour corriger une quantité à la main, crée plutôt un
+mouvement <code>ADJUSTMENT</code> depuis l'application : la trace est conservée.</p>
+
+<!-- ═══════════ 9 ═══════════ -->
+<h2 id="s9">9. Dépannage : problème → solution</h2>
+<table>
+  <thead><tr><th>Symptôme</th><th>Cause probable</th><th>Solution</th></tr></thead>
+  <tbody>
+    <tr><td>« API démarrée » ne s'affiche pas / erreur <code>EADDRINUSE</code></td><td>le port 4000 est déjà pris (une ancienne instance tourne)</td><td>ferme l'ancien terminal, ou change <code>PORT</code> dans <code>backend/.env</code></td></tr>
+    <tr><td>Erreur de connexion Prisma / code <code>P1001</code></td><td>PostgreSQL n'est pas démarré, ou mauvais mot de passe dans <code>.env</code></td><td>démarre le service PostgreSQL (Windows : Services → <code>postgresql-x64-…</code> → Démarrer)</td></tr>
+    <tr><td>Le site affiche « Erreur serveur » ou rien ne charge</td><td>le backend n'est pas lancé</td><td>lance le terminal 1 (§7)</td></tr>
+    <tr><td><code>{"status":"ok"}</code> ne répond pas</td><td>API arrêtée ou mauvais port</td><td>vérifie le terminal 1 et <code>PORT</code></td></tr>
+    <tr><td>Login : « Identifiants invalides »</td><td>le seed n'a jamais tourné (ou email/mot de passe faux)</td><td><code>npm run seed</code> dans <code>backend/</code>, puis utilise les comptes du §7</td></tr>
+    <tr><td>Une page redirige sans arrêt vers <code>/login</code></td><td>token expiré (7 jours) ou invalide</td><td>déconnecte/reconnecte-toi ; vide le localStorage (F12 → Application) si besoin</td></tr>
+    <tr><td>Erreur CORS dans la console du navigateur</td><td>le frontend tourne sur une autre adresse que <code>CLIENT_URL</code></td><td>aligne <code>CLIENT_URL</code> (backend/.env) avec l'adresse réelle du frontend</td></tr>
+    <tr><td>« Accès refusé pour ce rôle » (403)</td><td>le compte n'a pas le rôle requis (ex : suppression réservée à l'ADMIN)</td><td>connecte-toi avec le compte ADMIN</td></tr>
+    <tr><td>Page blanche après une modification du frontend</td><td>erreur JavaScript</td><td>regarde la console du navigateur (F12) et le terminal Vite</td></tr>
+    <tr><td>Quantités incohérentes</td><td>manipulation directe en base</td><td>refais un <code>ADJUSTMENT</code> depuis l'app ; en dernier recours <code>npm run seed</code> recalcule la démo</td></tr>
+    <tr><td><code>prisma migrate dev</code> propose un reset</td><td>la base a dérivé des migrations</td><td>accepte le reset <strong>seulement en développement</strong> (données de démo perdues)</td></tr>
+  </tbody>
+</table>
+
+<!-- ═══════════ 10 ═══════════ -->
+<h2 id="s10">10. Git : sauvegarder et mettre à jour le projet</h2>
+<p>Le projet vit sur GitHub. Trois gestes à connaître :</p>
+<p><strong>Sauvegarder ton travail (après chaque séance de travail) :</strong></p>
+<pre><code>git add .                       # prépare tous les changements
+git commit -m "description du changement"   # crée un point de sauvegarde local
+git push                        # envoie sur GitHub</code></pre>
+<p><strong>Récupérer les dernières modifications</strong> (sur un autre ordinateur, ou après un
+changement fait par quelqu'un d'autre) :</p>
+<pre><code>git pull</code></pre>
+<p><strong>Voir l'état courant :</strong></p>
+<pre><code>git status         # quels fichiers ont changé ?
+git log --oneline  # l'historique des sauvegardes</code></pre>
+<div class="warning"><p>⚠️ Les fichiers listés dans <code>.gitignore</code> (<code>node_modules/</code>,
+<code>.env</code>, <code>dist/</code>) ne seront jamais envoyés sur GitHub — c'est voulu. Une personne qui
+récupère le projet doit recréer <code>.env</code> à partir de <code>.env.example</code> puis lancer
+<code>npm install</code> dans <code>backend/</code> et <code>frontend/</code>, puis
+<code>npx prisma migrate dev</code> et <code>npm run seed</code> dans <code>backend/</code>.</p></div>
+
+<!-- ═══════════ 11 ═══════════ -->
+<h2 id="s11">11. Un jour, mettre en ligne pour de vrai (production)</h2>
+<p>Pour une vraie utilisation (au-delà de ton PC), il faudra :</p>
+<ol>
+  <li><strong>Changer <code>JWT_SECRET</code></strong> dans le <code>.env</code> du serveur (une longue chaîne aléatoire).</li>
+  <li><strong>Changer les mots de passe des comptes de démo</strong> (voir Recette C) ou supprimer les comptes de démo.</li>
+  <li><strong>Créer un utilisateur ADMIN avec un mot de passe fort</strong> pour toi.</li>
+  <li><strong>Servir le frontend compilé</strong> : <code>npm run build</code> dans <code>frontend/</code> produit le
+  dossier <code>dist/</code> à héberger (Netlify, Vercel, un serveur nginx…), avec <code>VITE_API_URL</code>
+  pointant vers l'adresse publique de l'API.</li>
+  <li><strong>Héberger l'API + PostgreSQL</strong> (Railway, Render, un VPS…) avec les bonnes valeurs
+  dans le <code>.env</code> de production (<code>DATABASE_URL</code>, <code>CLIENT_URL</code>).</li>
+  <li><strong>HTTPS</strong> activé (la plupart de ces plateformes le font automatiquement).</li>
+</ol>
+
+<!-- ═══════════ 12 ═══════════ -->
+<h2 id="s12">12. Lexique des mots techniques</h2>
+<table>
+  <thead><tr><th>Mot</th><th>Signification simple</th></tr></thead>
+  <tbody>
+    <tr><td><strong>API</strong></td><td>le « serveur » : un programme qui répond à des questions (requêtes HTTP)</td></tr>
+    <tr><td><strong>Endpoint / route</strong></td><td>une « question » précise, ex : <code>GET /api/products</code> = « donne-moi les produits »</td></tr>
+    <tr><td><strong>JSON</strong></td><td>format texte structuré utilisé pour les échanges entre frontend et backend</td></tr>
+    <tr><td><strong>JWT / token</strong></td><td>badge numérique remis à la connexion, présenté à chaque requête</td></tr>
+    <tr><td><strong>CRUD</strong></td><td>Create, Read, Update, Delete — les 4 opérations de base sur des données</td></tr>
+    <tr><td><strong>Middleware</strong></td><td>étape intermédiaire par laquelle passe une requête (ex : vérification du token)</td></tr>
+    <tr><td><strong>Migration</strong></td><td>fichier qui décrit une modification de la structure de la base</td></tr>
+    <tr><td><strong>Seed</strong></td><td>script qui remplit la base avec des données de départ / de démonstration</td></tr>
+    <tr><td><strong>ORM (Prisma)</strong></td><td>outil qui permet de parler à la base en JavaScript au lieu de SQL</td></tr>
+    <tr><td><strong>Transaction</strong></td><td>groupe d'opérations « tout ou rien » pour garder des données cohérentes</td></tr>
+    <tr><td><strong>CORS</strong></td><td>règle de sécurité : quelles adresses web ont le droit d'appeler l'API</td></tr>
+    <tr><td><strong>localStorage</strong></td><td>petite mémoire du navigateur (on y garde le token de session)</td></tr>
+    <tr><td><strong>Composant</strong></td><td>brique d'interface réutilisable (bouton, modale, tableau…)</td></tr>
+    <tr><td><strong>Build</strong></td><td>compilation du frontend en fichiers optimisés (dossier <code>dist/</code>)</td></tr>
+  </tbody>
+</table>
+
+<p class="footnote">StockFlow — Guide de maintenance · Document généré le 14/09/2026.
+Pense à le mettre à jour quand le projet évolue !</p>
+
+</body>
+</html>

@@ -1,0 +1,25 @@
+# ============================================================
+# Fichiers que git ne doit JAMAIS envoyer sur GitHub
+# ============================================================
+
+# Dépendances installées (elles se réinstallent avec "npm install")
+node_modules/
+
+# Fichiers d'environnement : contiennent les mots de passe et secrets
+.env
+.env.local
+.env.*.local
+
+# Résultats de compilation (se régénèrent avec "npm run build")
+dist/
+build/
+
+# Journaux et fichiers système
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+
+# Éditeurs
+.vscode/
+.idea/

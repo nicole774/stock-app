@@ -38,4 +38,9 @@ app.use((req, res) => res.status(404).json({ message: "Route introuvable." }));
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 4000;
+
+if (!process.env.JWT_SECRET) {
+  console.warn("⚠ JWT_SECRET n'est pas défini — définissez-le dans .env avant toute mise en production.");
+}
+
 app.listen(PORT, () => console.log(`API démarrée sur http://localhost:${PORT}`));

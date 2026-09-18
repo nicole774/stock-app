@@ -1,12 +1,16 @@
 const prisma = require("../lib/prisma");
 
+const ALLOWED_STATUSES = ["PENDING", "CONFIRMED", "CANCELLED"];
+
 function genReference(prefix) {
-  return `${prefix}-${Date.now().toString(36).toUpperCase()}`;
+  return `${prefix}-${Date.now().toString(36).toUpperCase()}${Math.floor(Math.random() * 90 + 10)}`;
 }
 
 async function list(req, res, next) {
   try {
+    const { status } = req.query;
     const orders = await prisma.purchaseOrder.findMany({
+      where: { ...(status && { status }) },
       include: {
         supplier: true,
         warehouse: true,
@@ -41,6 +45,9 @@ async function create(req, res, next) {
     if (!supplierId || !warehouseId || !items?.length) {
       return res.status(400).json({ message: "supplierId, warehouseId et items sont requis." });
     }
+    if (items.some((i) => !i.productId || !(i.quantity > 0) || i.unitCost == null)) {
+      return res.status(400).json({ message: "Chaque article requiert productId, quantity (>0) et unitCost." });
+    }
 
     const totalAmount = items.reduce((sum, i) => sum + i.quantity * i.unitCost, 0);
 
@@ -71,6 +78,7 @@ async function receive(req, res, next) {
         include: { items: true },
       });
       if (!po) throw Object.assign(new Error("Commande introuvable."), { status: 404 });
+      if (po.status === "CANCELLED") throw Object.assign(new Error("Impossible de réceptionner une commande annulée."), { status: 400 });
       if (po.status === "RECEIVED") throw Object.assign(new Error("Commande déjà réceptionnée."), { status: 400 });
 
       for (const item of po.items) {
@@ -108,8 +116,18 @@ async function receive(req, res, next) {
 async function updateStatus(req, res, next) {
   try {
     const { status } = req.body;
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `Statut invalide. Valeurs autorisées : ${ALLOWED_STATUSES.join(", ")}.` });
+    }
+
+    const existing = await prisma.purchaseOrder.findUnique({ where: { id: req.params.id } });
+    if (!existing) return res.status(404).json({ message: "Commande introuvable." });
+    if (existing.status === "RECEIVED") {
+      return res.status(400).json({ message: "Une commande réceptionnée ne peut plus être modifiée." });
+    }
+
     const order = await prisma.purchaseOrder.update({
-      where: { id: req.params.id },
+      where: { id: existing.id },
       data: { status },
     });
     res.json(order);

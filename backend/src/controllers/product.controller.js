@@ -70,9 +70,9 @@ async function create(req, res, next) {
         name,
         description,
         unit,
-        costPrice,
-        sellingPrice,
-        minStockLevel: minStockLevel ?? 0,
+        costPrice: Number(costPrice),
+        sellingPrice: Number(sellingPrice),
+        minStockLevel: Number(minStockLevel ?? 0),
         categoryId: categoryId || null,
         supplierId: supplierId || null,
       },
@@ -84,11 +84,31 @@ async function create(req, res, next) {
   }
 }
 
+const UPDATABLE_FIELDS = [
+  "sku",
+  "name",
+  "description",
+  "unit",
+  "costPrice",
+  "sellingPrice",
+  "minStockLevel",
+  "isActive",
+  "categoryId",
+  "supplierId",
+];
+
 async function update(req, res, next) {
   try {
+    const data = {};
+    for (const field of UPDATABLE_FIELDS) {
+      if (req.body[field] !== undefined) data[field] = req.body[field];
+    }
+    if (data.categoryId === "") data.categoryId = null;
+    if (data.supplierId === "") data.supplierId = null;
+
     const product = await prisma.product.update({
       where: { id: req.params.id },
-      data: req.body,
+      data,
     });
     res.json(product);
   } catch (err) {

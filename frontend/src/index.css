@@ -12,6 +12,23 @@ body {
 
 /* Focus visible clair pour l'accessibilité clavier */
 :focus-visible {
-  outline: 2px solid #C1802E;
+  outline: 2px solid #c1802e;
   outline-offset: 2px;
+}
+
+/* Barres de défilement discrètes */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #d3cfc6;
+  border-radius: 8px;
+  border: 2px solid #f4f3ef;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #b9b4a8;
 }
