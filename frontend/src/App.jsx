@@ -3,7 +3,9 @@ import { useAuth } from "./context/AuthContext.jsx";
 import Layout from "./components/Layout.jsx";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
+import Setup from "./pages/Setup.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
+import Users from "./pages/Users.jsx";
 import Products from "./pages/Products.jsx";
 import Categories from "./pages/Categories.jsx";
 import Suppliers from "./pages/Suppliers.jsx";
@@ -19,11 +21,18 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function AdminRoute({ children }) {
+  const { user } = useAuth();
+  if (user?.role !== "ADMIN") return <Navigate to="/dashboard" replace />;
+  return children;
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/setup" element={<Setup />} />
 
       <Route
         element={
@@ -41,6 +50,14 @@ export default function App() {
         <Route path="/stock-movements" element={<StockMovements />} />
         <Route path="/purchase-orders" element={<PurchaseOrders />} />
         <Route path="/sales-orders" element={<SalesOrders />} />
+        <Route
+          path="/users"
+          element={
+            <AdminRoute>
+              <Users />
+            </AdminRoute>
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

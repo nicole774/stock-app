@@ -4,6 +4,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 
 const authRoutes = require("./routes/auth.routes");
+const userRoutes = require("./routes/user.routes");
 const categoryRoutes = require("./routes/category.routes");
 const supplierRoutes = require("./routes/supplier.routes");
 const customerRoutes = require("./routes/customer.routes");
@@ -24,6 +25,7 @@ app.use(morgan("dev"));
 app.get("/api/health", (req, res) => res.json({ status: "ok" }));
 
 app.use("/api/auth", authRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/suppliers", supplierRoutes);
 app.use("/api/customers", customerRoutes);

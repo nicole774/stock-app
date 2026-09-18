@@ -12,40 +12,52 @@ import {
   IconReceipt,
   IconTruck,
   IconUsers,
+  IconClipboard,
   IconLogout,
   IconMenu,
   IconX,
 } from "./icons.jsx";
 
-const NAV_SECTIONS = [
-  {
-    label: "Aperçu",
-    items: [{ to: "/dashboard", label: "Tableau de bord", end: true, icon: IconDashboard }],
-  },
-  {
-    label: "Catalogue",
-    items: [
-      { to: "/products", label: "Produits", icon: IconPackage },
-      { to: "/categories", label: "Catégories", icon: IconTag },
-    ],
-  },
-  {
-    label: "Stock",
-    items: [
-      { to: "/warehouses", label: "Entrepôts", icon: IconWarehouse },
-      { to: "/stock-movements", label: "Mouvements", icon: IconTransfer },
-    ],
-  },
-  {
-    label: "Transactions",
-    items: [
-      { to: "/purchase-orders", label: "Achats", icon: IconCart },
-      { to: "/sales-orders", label: "Ventes", icon: IconReceipt },
-      { to: "/suppliers", label: "Fournisseurs", icon: IconTruck },
-      { to: "/customers", label: "Clients", icon: IconUsers },
-    ],
-  },
-];
+function getNavSections(role) {
+  const sections = [
+    {
+      label: "Aperçu",
+      items: [{ to: "/dashboard", label: "Tableau de bord", end: true, icon: IconDashboard }],
+    },
+    {
+      label: "Catalogue",
+      items: [
+        { to: "/products", label: "Produits", icon: IconPackage },
+        { to: "/categories", label: "Catégories", icon: IconTag },
+      ],
+    },
+    {
+      label: "Stock",
+      items: [
+        { to: "/warehouses", label: "Entrepôts", icon: IconWarehouse },
+        { to: "/stock-movements", label: "Mouvements", icon: IconTransfer },
+      ],
+    },
+    {
+      label: "Transactions",
+      items: [
+        { to: "/purchase-orders", label: "Achats", icon: IconCart },
+        { to: "/sales-orders", label: "Ventes", icon: IconReceipt },
+        { to: "/suppliers", label: "Fournisseurs", icon: IconTruck },
+        { to: "/customers", label: "Clients", icon: IconUsers },
+      ],
+    },
+  ];
+
+  if (role === "ADMIN") {
+    sections.push({
+      label: "Administration",
+      items: [{ to: "/users", label: "Utilisateurs", icon: IconClipboard }],
+    });
+  }
+
+  return sections;
+}
 
 function Brand() {
   return (
@@ -62,9 +74,12 @@ function Brand() {
 }
 
 function NavList({ onNavigate }) {
+  const { user } = useAuth();
+  const sections = getNavSections(user?.role);
+
   return (
     <nav className="flex-1 overflow-y-auto py-2">
-      {NAV_SECTIONS.map((section) => (
+      {sections.map((section) => (
         <div key={section.label} className="mb-4">
           <p className="px-6 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/35">
             {section.label}
