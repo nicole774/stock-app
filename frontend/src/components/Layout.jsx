@@ -20,7 +20,7 @@ import {
 const NAV_SECTIONS = [
   {
     label: "Aperçu",
-    items: [{ to: "/", label: "Tableau de bord", end: true, icon: IconDashboard }],
+    items: [{ to: "/dashboard", label: "Tableau de bord", end: true, icon: IconDashboard }],
   },
   {
     label: "Catalogue",
